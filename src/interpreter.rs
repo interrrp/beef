@@ -5,8 +5,7 @@ const TAPE_SIZE: usize = 512;
 /// A Brainfuck interpreter.
 ///
 /// To get started, instantiate an interpreter with [`Interpreter::new`] or
-/// [`Interpreter::from_program`], then run the program with
-/// [`Interpreter::run`].
+/// [`Interpreter::from_program`], then run the program with [`Interpreter::run`].
 ///
 /// # Example
 ///
@@ -62,6 +61,9 @@ impl Interpreter {
         match instruction {
             '>' => self.tape_pointer += 1,
             '<' => self.tape_pointer -= 1,
+
+            '+' => self.tape[self.tape_pointer] = self.tape[self.tape_pointer].wrapping_add(1),
+            '-' => self.tape[self.tape_pointer] = self.tape[self.tape_pointer].wrapping_sub(1),
 
             _ => return Err(anyhow!("Unknown instruction: {instruction}")),
         }
