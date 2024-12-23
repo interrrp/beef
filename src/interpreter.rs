@@ -2,7 +2,7 @@ use std::io::{stdin, stdout, Read, StdinLock, StdoutLock, Write};
 
 use anyhow::{anyhow, Context, Result};
 
-const TAPE_SIZE: usize = 1024;
+const TAPE_SIZE: usize = 30_000;
 
 /// A Brainfuck interpreter.
 ///
@@ -83,14 +83,14 @@ impl Interpreter {
             '[' => self.loop_stack.push(self.program_pointer),
             ']' => {
                 if *tape_val == 0 {
-                    // Loop ends when the tape value at the pointer is 0
-                    if self.loop_stack.pop().is_none() {
-                        return Err(anyhow!("Unmatched ]"));
-                    }
-                } else if let Some(beginning) = self.loop_stack.last() {
-                    self.program_pointer = *beginning;
+                    self.loop_stack
+                        .pop()
+                        .ok_or_else(|| anyhow!("Unmatched ]"))?;
                 } else {
-                    return Err(anyhow!("Unmatched ]"));
+                    self.program_pointer = *self
+                        .loop_stack
+                        .last()
+                        .ok_or_else(|| anyhow!("Unmatched ]"))?;
                 }
             }
 
