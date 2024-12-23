@@ -14,7 +14,8 @@ mod interpreter;
 struct Args {
     /// Path of the Brainfuck program to execute.
     ///
-    /// The filename typically ends in `.bf` or `.b`.
+    /// The filename typically ends in `.b` or `.bf`, but `.b` is preferred as `.bf` often gets
+    /// confused with Befunge.
     program_path: PathBuf,
 }
 
