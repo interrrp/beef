@@ -130,39 +130,40 @@ impl Interpreter {
 mod tests {
     use super::*;
 
+    fn run(program: &str) -> Interpreter {
+        let mut interpreter = Interpreter::from_program(program);
+        interpreter.run().unwrap();
+        interpreter
+    }
+
     #[test]
     fn move_tape_pointer() {
-        let mut interpreter = Interpreter::from_program(">><");
-        interpreter.run().unwrap();
+        let interpreter = run(">><");
         assert_eq!(interpreter.tape_pointer, 1);
     }
 
     #[test]
     fn move_tape_pointer_wrap() {
-        let mut interpreter = Interpreter::from_program("<");
-        interpreter.run().unwrap();
+        let interpreter = run("<");
         assert_eq!(interpreter.tape_pointer, TAPE_SIZE - 1);
     }
 
     #[test]
     fn increment_decrement() {
-        let mut interpreter = Interpreter::from_program("+++--");
-        interpreter.run().unwrap();
+        let interpreter = run("+++--");
         assert_eq!(interpreter.tape[0], 1);
     }
 
     #[test]
     fn wrap_increment_decrement() {
-        let mut interpreter = Interpreter::from_program("->[+]");
-        interpreter.run().unwrap();
+        let interpreter = run("->[+]");
         assert_eq!(interpreter.tape[0], 255);
         assert_eq!(interpreter.tape[1], 0);
     }
 
     #[test]
     fn loops() {
-        let mut interpreter = Interpreter::from_program("+++++[->+<]++");
-        interpreter.run().unwrap();
+        let interpreter = run("+++++[->+<]++");
         assert_eq!(interpreter.tape[0], 2);
         assert_eq!(interpreter.tape[1], 5);
     }
@@ -175,8 +176,7 @@ mod tests {
 
     #[test]
     fn nested_loops() {
-        let mut interpreter = Interpreter::from_program("++[->+[-++[->+[-]++[->+[-]]]]]");
-        interpreter.run().unwrap();
+        let interpreter = run("++[->+[-++[->+[-]++[->+[-]]]]]");
         assert_eq!(interpreter.tape[0], 1);
         assert_eq!(interpreter.tape[1], 1);
         assert_eq!(interpreter.tape[2], 1);
