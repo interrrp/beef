@@ -1,10 +1,11 @@
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
 
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use anyhow::Result;
 use clap::Parser;
+use interpreter::Interpreter;
 
 mod interpreter;
 
@@ -20,7 +21,10 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    dbg!(args);
+    let program = fs::read_to_string(args.program_path)?;
+
+    let mut interpreter = Interpreter::from_program(&program);
+    interpreter.run()?;
 
     Ok(())
 }
