@@ -6,6 +6,8 @@ use std::path::PathBuf;
 use anyhow::Result;
 use clap::Parser;
 
+mod interpreter;
+
 /// A tiny Brainfuck interpreter.
 #[derive(Parser, Debug)]
 struct Args {
