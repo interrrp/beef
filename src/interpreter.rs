@@ -58,12 +58,29 @@ impl Interpreter {
     ///
     /// This does not advance the program pointer.
     fn execute_instruction(&mut self, instruction: char) -> Result<()> {
+        let tape_val = &mut self.tape[self.tape_pointer];
+
         match instruction {
             '>' => self.tape_pointer += 1,
             '<' => self.tape_pointer -= 1,
 
-            '+' => self.tape[self.tape_pointer] = self.tape[self.tape_pointer].wrapping_add(1),
-            '-' => self.tape[self.tape_pointer] = self.tape[self.tape_pointer].wrapping_sub(1),
+            '+' => *tape_val = tape_val.wrapping_add(1),
+            '-' => *tape_val = tape_val.wrapping_sub(1),
+
+            '[' => self.loop_stack.push(self.program_pointer),
+            ']' => {
+                if *tape_val == 0 {
+                    // Loop ends when the tape value at the pointer is 0
+                    if self.loop_stack.pop().is_none() {
+                        return Err(anyhow!("Unmatched ]"));
+                    }
+                } else {
+                    match self.loop_stack.last() {
+                        Some(beginning) => self.program_pointer = *beginning,
+                        None => return Err(anyhow!("Unmatched ]")),
+                    }
+                }
+            }
 
             _ => return Err(anyhow!("Unknown instruction: {instruction}")),
         }
@@ -102,5 +119,11 @@ mod tests {
         let mut interpreter = Interpreter::from_program("+++++[->+<]");
         interpreter.run().unwrap();
         assert_eq!(interpreter.tape[1], 5);
+    }
+
+    #[test]
+    fn unmatched_loop_error() {
+        let mut interpreter = Interpreter::from_program("]");
+        assert!(interpreter.run().is_err());
     }
 }
