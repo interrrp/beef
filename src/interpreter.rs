@@ -22,7 +22,7 @@ pub struct Interpreter {
     program: Vec<char>,
     program_pointer: usize,
 
-    loop_stack: Vec<usize>,
+    bracket_map: Vec<usize>,
 }
 
 impl Interpreter {
@@ -37,7 +37,7 @@ impl Interpreter {
             program: Vec::new(),
             program_pointer: 0,
 
-            loop_stack: Vec::with_capacity(16),
+            bracket_map: Vec::new(),
         }
     }
 
@@ -50,6 +50,8 @@ impl Interpreter {
 
     /// Run the program.
     pub fn run(&mut self) -> Result<()> {
+        self.compute_bracket_map()?;
+
         let mut stdin = stdin().lock();
         let mut stdout = stdout().lock();
 
@@ -80,19 +82,8 @@ impl Interpreter {
             '+' => *tape_val = tape_val.wrapping_add(1),
             '-' => *tape_val = tape_val.wrapping_sub(1),
 
-            '[' => self.loop_stack.push(self.program_pointer),
-            ']' => {
-                if *tape_val == 0 {
-                    self.loop_stack
-                        .pop()
-                        .ok_or_else(|| anyhow!("Unmatched ]"))?;
-                } else {
-                    self.program_pointer = *self
-                        .loop_stack
-                        .last()
-                        .ok_or_else(|| anyhow!("Unmatched ]"))?;
-                }
-            }
+            '[' if *tape_val == 0 => self.program_pointer = self.bracket_map[self.program_pointer],
+            ']' if *tape_val != 0 => self.program_pointer = self.bracket_map[self.program_pointer],
 
             '.' => {
                 write!(stdout, "{}", *tape_val as char)?;
@@ -106,6 +97,29 @@ impl Interpreter {
             }
 
             _ => {}
+        }
+
+        Ok(())
+    }
+
+    /// Compute the bracket map.
+    fn compute_bracket_map(&mut self) -> Result<()> {
+        self.bracket_map = vec![0; self.program.len()];
+        let mut stack = Vec::new();
+
+        for (i, &ch) in self.program.iter().enumerate() {
+            match ch {
+                '[' => stack.push(i),
+                ']' => {
+                    if let Some(open_index) = stack.pop() {
+                        self.bracket_map[open_index] = i;
+                        self.bracket_map[i] = open_index;
+                    } else {
+                        return Err(anyhow!("Unmatched ] at {i}"));
+                    }
+                }
+                _ => {}
+            }
         }
 
         Ok(())
