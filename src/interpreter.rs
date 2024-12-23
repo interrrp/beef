@@ -22,6 +22,15 @@ pub struct Interpreter {
     program: Vec<char>,
     program_pointer: usize,
 
+    /// Precomputed bracket map, calculated on every call to `run`.
+    ///
+    /// This maps starting brackets to their corresponding ending brackets, and vice versa. For
+    /// example: if a starting bracket at index 1 has its closing bracket at index 3, the index of
+    /// the closing bracket can be retrieved by `bracket_map[1]`, and the index of the starting
+    /// bracket at `bracket_map[3]`.
+    ///
+    /// This exists for both convenience and performance, as it allows for O(1) loop indexing during
+    /// runtime while only requiring one line.
     bracket_map: Vec<usize>,
 }
 
