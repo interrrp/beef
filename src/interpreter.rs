@@ -73,8 +73,14 @@ impl Interpreter {
         let tape_val = &mut self.tape[self.tape_pointer];
 
         match instruction {
-            '>' => self.tape_pointer += 1,
-            '<' => self.tape_pointer -= 1,
+            '>' => self.tape_pointer = (self.tape_pointer + 1) % TAPE_SIZE,
+            '<' => {
+                self.tape_pointer = if self.tape_pointer == 0 {
+                    TAPE_SIZE - 1
+                } else {
+                    self.tape_pointer - 1
+                }
+            }
 
             '+' => *tape_val = tape_val.wrapping_add(1),
             '-' => *tape_val = tape_val.wrapping_sub(1),
@@ -95,7 +101,7 @@ impl Interpreter {
             }
 
             '.' => {
-                write!(stdout, "d")?;
+                write!(stdout, "{}", *tape_val as usize)?;
                 stdout.flush()?;
             }
             ',' => {
