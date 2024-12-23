@@ -7,12 +7,12 @@ const TAPE_SIZE: usize = 30_000;
 /// A Brainfuck interpreter.
 ///
 /// To get started, instantiate an interpreter with [`Interpreter::new`] or
-/// [`Interpreter::from_program`], then run the program with [`Interpreter::run`].
+/// [`Interpreter::from_program_str`], then run the program with [`Interpreter::run`].
 ///
 /// # Example
 ///
 /// ```
-/// let mut interpreter = Interpreter::from_program(">><");
+/// let mut interpreter = Interpreter::from_program_str(">><");
 /// interpreter.run().unwrap();
 /// ```
 pub struct Interpreter {
@@ -36,8 +36,6 @@ pub struct Interpreter {
 
 impl Interpreter {
     /// Return a new, empty interpreter.
-    ///
-    /// This locks stdin until this interpreter is dropped.
     pub fn new() -> Interpreter {
         Interpreter {
             tape: [0; TAPE_SIZE],
@@ -50,14 +48,21 @@ impl Interpreter {
         }
     }
 
-    /// Return an empty interpreter but with a program preloaded.
-    pub fn from_program(program: &str) -> Interpreter {
+    /// Return an empty interpreter with a program preloaded.
+    pub fn from_program_str(program: &str) -> Interpreter {
         let mut interpreter = Interpreter::new();
         interpreter.program = program.chars().collect();
         interpreter
     }
 
     /// Run the program.
+    ///
+    /// This locks stdin and stdout until execution finishes.
+    ///
+    /// An error is returned:
+    ///
+    /// - Immediately, if there is an unmatched loop bracket
+    /// - At runtime, if unable to read from stdin or write to stdout
     pub fn run(&mut self) -> Result<()> {
         self.compute_bracket_map()?;
 
@@ -75,7 +80,10 @@ impl Interpreter {
 
     /// Execute a single instruction.
     ///
-    /// This does not advance the program pointer.
+    /// An error is returned if:
+    ///
+    /// - The instruction is `.`, and writing to stdout fails
+    /// - The instruction is `,`, and reading from stdin fails
     fn execute_instruction(
         &mut self,
         instruction: char,
@@ -111,7 +119,9 @@ impl Interpreter {
         Ok(())
     }
 
-    /// Compute the bracket map.
+    /// Compute the loop bracket map.
+    ///
+    /// An error is returned if there is an unmatched bracket.
     fn compute_bracket_map(&mut self) -> Result<()> {
         self.bracket_map = vec![0; self.program.len()];
         let mut stack = Vec::new();
@@ -140,7 +150,7 @@ mod tests {
     use super::*;
 
     fn run(program: &str) -> Interpreter {
-        let mut interpreter = Interpreter::from_program(program);
+        let mut interpreter = Interpreter::from_program_str(program);
         interpreter.run().unwrap();
         interpreter
     }
@@ -178,8 +188,14 @@ mod tests {
     }
 
     #[test]
+    fn skip_loop_if_zero() {
+        let interpreter = run("[+++]");
+        assert_eq!(interpreter.tape[0], 0);
+    }
+
+    #[test]
     fn unmatched_loop_error() {
-        let mut interpreter = Interpreter::from_program("]");
+        let mut interpreter = Interpreter::from_program_str("]");
         assert!(interpreter.run().is_err());
     }
 

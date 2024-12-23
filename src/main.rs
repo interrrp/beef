@@ -25,7 +25,7 @@ fn main() -> Result<()> {
     let program = fs::read_to_string(&args.program_path)
         .context(format!("Failed to read {}", &args.program_path.display()))?;
 
-    let mut interpreter = Interpreter::from_program(&program);
+    let mut interpreter = Interpreter::from_program_str(&program);
     interpreter.run()?;
 
     Ok(())
