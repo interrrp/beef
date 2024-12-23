@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 const TAPE_SIZE: usize = 512;
 
@@ -59,7 +59,13 @@ impl Interpreter {
     ///
     /// This does not advance the program pointer.
     fn execute_instruction(&mut self, instruction: char) -> Result<()> {
-        dbg!(instruction);
+        match instruction {
+            '>' => self.tape_pointer += 1,
+            '<' => self.tape_pointer -= 1,
+
+            _ => return Err(anyhow!("Unknown instruction: {instruction}")),
+        }
+
         Ok(())
     }
 }
