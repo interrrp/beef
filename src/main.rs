@@ -3,7 +3,7 @@
 
 use std::{fs, path::PathBuf};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use interpreter::Interpreter;
 
@@ -21,7 +21,8 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let program = fs::read_to_string(args.program_path)?;
+    let program = fs::read_to_string(&args.program_path)
+        .context(format!("Failed to read {}", &args.program_path.display()))?;
 
     let mut interpreter = Interpreter::from_program(&program);
     interpreter.run()?;
