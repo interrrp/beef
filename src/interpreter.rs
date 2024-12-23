@@ -105,7 +105,7 @@ impl Interpreter {
                     .context("Failed to read character from stdin")??;
             }
 
-            _ => return Err(anyhow!("Unknown instruction: {instruction}")),
+            _ => {}
         }
 
         Ok(())
