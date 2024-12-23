@@ -1,8 +1,8 @@
+use anyhow::{anyhow, Context, Result};
 use std::io::{stdin, stdout, Read, StdinLock, StdoutLock, Write};
 
-use anyhow::{anyhow, Context, Result};
-
-const TAPE_SIZE: usize = 30_000;
+const TAPE_SIZE: usize = 512;
+const TAPE_MASK: usize = TAPE_SIZE - 1; // Must be power of 2
 
 /// A Brainfuck interpreter.
 ///
@@ -19,7 +19,7 @@ pub struct Interpreter {
     tape: [u8; TAPE_SIZE],
     tape_pointer: usize,
 
-    pub program: Vec<char>,
+    program: Vec<char>,
     program_pointer: usize,
 
     loop_stack: Vec<usize>,
@@ -37,7 +37,7 @@ impl Interpreter {
             program: Vec::new(),
             program_pointer: 0,
 
-            loop_stack: Vec::new(),
+            loop_stack: Vec::with_capacity(16),
         }
     }
 
@@ -74,14 +74,8 @@ impl Interpreter {
         let tape_val = &mut self.tape[self.tape_pointer];
 
         match instruction {
-            '>' => self.tape_pointer = (self.tape_pointer + 1) % TAPE_SIZE,
-            '<' => {
-                self.tape_pointer = if self.tape_pointer == 0 {
-                    TAPE_SIZE - 1
-                } else {
-                    self.tape_pointer - 1
-                }
-            }
+            '>' => self.tape_pointer = (self.tape_pointer + 1) & TAPE_MASK,
+            '<' => self.tape_pointer = (self.tape_pointer - 1) & TAPE_MASK,
 
             '+' => *tape_val = tape_val.wrapping_add(1),
             '-' => *tape_val = tape_val.wrapping_sub(1),
@@ -93,11 +87,10 @@ impl Interpreter {
                     if self.loop_stack.pop().is_none() {
                         return Err(anyhow!("Unmatched ]"));
                     }
+                } else if let Some(beginning) = self.loop_stack.last() {
+                    self.program_pointer = *beginning;
                 } else {
-                    match self.loop_stack.last() {
-                        Some(beginning) => self.program_pointer = *beginning,
-                        None => return Err(anyhow!("Unmatched ]")),
-                    }
+                    return Err(anyhow!("Unmatched ]"));
                 }
             }
 
