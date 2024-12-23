@@ -2,7 +2,7 @@ use std::io::{stdin, stdout, Read, StdinLock, StdoutLock, Write};
 
 use anyhow::{anyhow, Context, Result};
 
-const TAPE_SIZE: usize = 512;
+const TAPE_SIZE: usize = 1024;
 
 /// A Brainfuck interpreter.
 ///
