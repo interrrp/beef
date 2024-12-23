@@ -2,7 +2,7 @@ use std::io::{stdin, stdout, Read, StdinLock, StdoutLock, Write};
 
 use anyhow::{anyhow, Context, Result};
 
-const TAPE_SIZE: usize = 512;
+const TAPE_SIZE: usize = 30_000;
 
 /// A Brainfuck interpreter.
 ///
@@ -58,6 +58,7 @@ impl Interpreter {
             self.execute_instruction(instruction, &mut stdin, &mut stdout)?;
             self.program_pointer += 1;
         }
+
         Ok(())
     }
 
@@ -101,7 +102,7 @@ impl Interpreter {
             }
 
             '.' => {
-                write!(stdout, "{}", *tape_val as usize)?;
+                write!(stdout, "{}", *tape_val as char)?;
                 stdout.flush()?;
             }
             ',' => {
@@ -145,8 +146,9 @@ mod tests {
 
     #[test]
     fn loops() {
-        let mut interpreter = Interpreter::from_program("+++++[->+<]");
+        let mut interpreter = Interpreter::from_program("+++++[->+<]++");
         interpreter.run().unwrap();
+        assert_eq!(interpreter.tape[0], 2);
         assert_eq!(interpreter.tape[1], 5);
     }
 
