@@ -94,7 +94,10 @@ impl Interpreter {
                 }
             }
 
-            '.' => write!(stdout, "{}", *tape_val as char)?,
+            '.' => {
+                write!(stdout, "{}", *tape_val as char)?;
+                stdout.flush()?;
+            }
             ',' => {
                 *tape_val = stdin
                     .bytes()
