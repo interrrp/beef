@@ -1,8 +1,8 @@
-use anyhow::{anyhow, Context, Result};
 use std::io::{stdin, stdout, Read, StdinLock, StdoutLock, Write};
 
+use anyhow::{anyhow, Context, Result};
+
 const TAPE_SIZE: usize = 512;
-const TAPE_MASK: usize = TAPE_SIZE - 1; // Must be power of 2
 
 /// A Brainfuck interpreter.
 ///
@@ -74,8 +74,8 @@ impl Interpreter {
         let tape_val = &mut self.tape[self.tape_pointer];
 
         match instruction {
-            '>' => self.tape_pointer = (self.tape_pointer + 1) & TAPE_MASK,
-            '<' => self.tape_pointer = (self.tape_pointer - 1) & TAPE_MASK,
+            '>' => self.tape_pointer = (self.tape_pointer + 1) % TAPE_SIZE,
+            '<' => self.tape_pointer = (self.tape_pointer + TAPE_SIZE - 1) % TAPE_SIZE,
 
             '+' => *tape_val = tape_val.wrapping_add(1),
             '-' => *tape_val = tape_val.wrapping_sub(1),
@@ -124,6 +124,13 @@ mod tests {
     }
 
     #[test]
+    fn move_tape_pointer_wrap() {
+        let mut interpreter = Interpreter::from_program("<");
+        interpreter.run().unwrap();
+        assert_eq!(interpreter.tape_pointer, TAPE_SIZE - 1);
+    }
+
+    #[test]
     fn increment_decrement() {
         let mut interpreter = Interpreter::from_program("+++--");
         interpreter.run().unwrap();
@@ -132,9 +139,10 @@ mod tests {
 
     #[test]
     fn wrap_increment_decrement() {
-        let mut interpreter = Interpreter::from_program("-");
+        let mut interpreter = Interpreter::from_program("->[+]");
         interpreter.run().unwrap();
         assert_eq!(interpreter.tape[0], 255);
+        assert_eq!(interpreter.tape[1], 0);
     }
 
     #[test]
@@ -149,5 +157,16 @@ mod tests {
     fn unmatched_loop_error() {
         let mut interpreter = Interpreter::from_program("]");
         assert!(interpreter.run().is_err());
+    }
+
+    #[test]
+    fn nested_loops() {
+        let mut interpreter = Interpreter::from_program("++[->+[-++[->+[-]++[->+[-]]]]]");
+        interpreter.run().unwrap();
+        assert_eq!(interpreter.tape[0], 1);
+        assert_eq!(interpreter.tape[1], 1);
+        assert_eq!(interpreter.tape[2], 1);
+        assert_eq!(interpreter.tape[3], 0);
+        assert_eq!(interpreter.tape_pointer, 3);
     }
 }
