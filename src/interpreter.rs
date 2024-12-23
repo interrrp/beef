@@ -1,4 +1,6 @@
-use anyhow::{anyhow, Result};
+use std::io::{stdin, stdout, Read, StdinLock, StdoutLock, Write};
+
+use anyhow::{anyhow, Context, Result};
 
 const TAPE_SIZE: usize = 512;
 
@@ -25,6 +27,8 @@ pub struct Interpreter {
 
 impl Interpreter {
     /// Return a new, empty interpreter.
+    ///
+    /// This locks stdin until this interpreter is dropped.
     pub fn new() -> Interpreter {
         Interpreter {
             tape: [0; TAPE_SIZE],
@@ -46,9 +50,12 @@ impl Interpreter {
 
     /// Run the program.
     pub fn run(&mut self) -> Result<()> {
+        let mut stdin = stdin().lock();
+        let mut stdout = stdout().lock();
+
         while self.program_pointer < self.program.len() {
             let instruction = self.program[self.program_pointer];
-            self.execute_instruction(instruction)?;
+            self.execute_instruction(instruction, &mut stdin, &mut stdout)?;
             self.program_pointer += 1;
         }
         Ok(())
@@ -57,7 +64,12 @@ impl Interpreter {
     /// Execute a single instruction.
     ///
     /// This does not advance the program pointer.
-    fn execute_instruction(&mut self, instruction: char) -> Result<()> {
+    fn execute_instruction(
+        &mut self,
+        instruction: char,
+        stdin: &mut StdinLock,
+        stdout: &mut StdoutLock,
+    ) -> Result<()> {
         let tape_val = &mut self.tape[self.tape_pointer];
 
         match instruction {
@@ -80,6 +92,17 @@ impl Interpreter {
                         None => return Err(anyhow!("Unmatched ]")),
                     }
                 }
+            }
+
+            '.' => {
+                write!(stdout, "d")?;
+                stdout.flush()?;
+            }
+            ',' => {
+                *tape_val = stdin
+                    .bytes()
+                    .next()
+                    .context("Failed to read character from stdin")??;
             }
 
             _ => return Err(anyhow!("Unknown instruction: {instruction}")),
